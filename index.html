@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Buscador de Mercados</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50 p-4">
+
+<div class="max-w-5xl mx-auto" id="app">
+
+  <!-- Header -->
+  <div class="bg-blue-700 text-white rounded-xl p-5 mb-5 shadow flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-xl font-bold">🏪 Buscador de Mercados</h1>
+      <p class="text-blue-200 text-sm mt-1">Haz clic en un mercado para registrar su información</p>
+    </div>
+    <span class="text-blue-200 text-sm" id="contador">0 mercados registrados</span>
+  </div>
+
+  <!-- Filtros -->
+  <div class="bg-white rounded-xl p-4 shadow mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div>
+      <label class="text-xs font-semibold text-gray-500 mb-1 block">🔍 Buscar</label>
+      <input id="search" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Nombre o distrito..."/>
+    </div>
+    <div>
+      <label class="text-xs font-semibold text-gray-500 mb-1 block">📍 Departamento</label>
+      <select id="filDep" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"></select>
+    </div>
+    <div>
+      <label class="text-xs font-semibold text-gray-500 mb-1 block">🏘️ Distrito</label>
+      <select id="filDis" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"></select>
+    </div>
+    <div>
+      <label class="text-xs font-semibold text-gray-500 mb-1 block">🏷️ Tipo</label>
+      <select id="filTipo" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"></select>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="flex items-center justify-between mb-3 px-1">
+    <span class="text-sm text-gray-500">Mostrando <span id="count" class="font-bold text-blue-700">0</span> mercados</span>
+    <button onclick="resetFiltros()" class="text-xs text-blue-600 hover:underline">Limpiar filtros</button>
+  </div>
+
+  <!-- Tabla -->
+  <div class="bg-white rounded-xl shadow overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-blue-700 text-white text-left">
+            <th class="px-3 py-3 font-semibold w-10">#</th>
+            <th class="px-3 py-3 font-semibold">Mercado</th>
+            <th class="px-3 py-3 font-semibold">Distrito</th>
+            <th class="px-3 py-3 font-semibold hidden md:table-cell">Zona</th>
+            <th class="px-3 py-3 font-semibold">Departamento</th>
+            <th class="px-3 py-3 font-semibold">Tipo</th>
+            <th class="px-3 py-3 font-semibold text-center">Info</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="bg-blue-700 text-white rounded-t-2xl p-4">
+      <div class="flex justify-between items-start">
+        <div>
+          <p class="text-blue-200 text-xs" id="modal-sub"></p>
+          <h2 class="font-bold text-base mt-0.5" id="modal-title"></h2>
+          <p class="text-blue-200 text-xs mt-0.5" id="modal-loc"></p>
+        </div>
+        <button onclick="closeModal()" class="text-white text-xl font-bold hover:text-blue-200 ml-2">✕</button>
+      </div>
+    </div>
+    <div class="p-5 space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">📢 Campaña Publicitaria (Cliente)</label>
+        <input id="m-campana" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Ej: Coca-Cola, Mibanco..."/>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">🪧 Vallas Publicitarias (Cant.)</label>
+        <input id="m-vallas" type="number" min="0" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Ej: 3"/>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">💳 Estado</label>
+        <select id="m-estado" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <option value="">-- Seleccionar --</option>
+          <option value="PAGADO">✅ Pagado</option>
+          <option value="PENDIENTE">⏳ Pendiente</option>
+        </select>
+      </div>
+    </div>
+    <div class="px-5 pb-3 flex gap-3">
+      <button onclick="guardar()" id="btn-guardar" class="flex-1 bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 rounded-lg transition text-sm">💾 Guardar</button>
+      <button onclick="closeModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 rounded-lg transition text-sm">Cerrar</button>
+    </div>
+    <p id="modal-msg" class="text-center text-xs pb-4 font-semibold hidden"></p>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzjBw3WZy70LA83KlG6cYw3IIlzwXdXQV4ghFS3bA3PrH8hQ31dxgTQ1JnJmJKTtzpC/exec";
+
+const data = [
+  {n:1,mercado:"MERCADO TRES REGIONES",distrito:"CARABAYLLO",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MAYORISTA"},
+  {n:2,mercado:"MERCADO LOS INCAS",distrito:"INDEPENDENCIA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:3,mercado:"MERCADO ERMITAÑO",distrito:"INDEPENDENCIA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:4,mercado:"MERCADO MIGUEL GRAU",distrito:"INDEPENDENCIA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:5,mercado:"MERCADO TAHUANTINSUYO",distrito:"INDEPENDENCIA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:6,mercado:"MERCADO CENTRAL VILLA DEL NORTE",distrito:"LOS OLIVOS",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:7,mercado:"MERCADO MERPROLIMA",distrito:"LOS OLIVOS",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:8,mercado:"MERCADO CONZAC",distrito:"LOS OLIVOS",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MAYORISTA"},
+  {n:9,mercado:"MERCADO ZAPALLAL",distrito:"PUENTE PIEDRA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:10,mercado:"MERCADO SEÑOR DE LOS MILAGROS",distrito:"SANTA ANITA",zona:"ZONA LIMA ESTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:11,mercado:"MERCADO SAN ANTONIO",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:12,mercado:"MERCADO CIPRESES",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:13,mercado:"MERCADO ZARUMILLA",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:14,mercado:"MERCADO LOS CHASQUIS",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:15,mercado:"MERCADO AMAKELLA",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:16,mercado:"MERCADO 3 DE ENERO",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:17,mercado:"MERCADO NISPEROS",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:18,mercado:"MERCADO LA ESTRELLA CAQUETA",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MAYORISTA"},
+  {n:19,mercado:"MERCADO GALERÍAS CAQUETA",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:20,mercado:"MERCADO UNION LOMAS",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:21,mercado:"MERCADO VIRGEN DE LAS MERCEDES",distrito:"VENTANILLA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:22,mercado:"MERCADO VIRGEN DE LA PUERTA",distrito:"VENTANILLA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
+  {n:23,mercado:"MERCADO FERIA LOS INCAS",distrito:"AREQUIPA",zona:"AREQUIPA",departamento:"AREQUIPA",tipo:"MINORISTA"},
+  {n:24,mercado:"MERCADO TERMINAL PESQUERO RIO SECO",distrito:"AREQUIPA",zona:"AREQUIPA",departamento:"AREQUIPA",tipo:"MAYORISTA"},
+  {n:25,mercado:"VILLA SUR",distrito:"AREQUIPA",zona:"AREQUIPA",departamento:"AREQUIPA",tipo:"MINORISTA"},
+  {n:26,mercado:"MERCADO VIRGEN DEL CHAPI",distrito:"AREQUIPA",zona:"AREQUIPA",departamento:"AREQUIPA",tipo:"MINORISTA"},
+  {n:27,mercado:"MERCADO NUEVO AMANECER",distrito:"AREQUIPA",zona:"AREQUIPA",departamento:"AREQUIPA",tipo:"MINORISTA"},
+  {n:28,mercado:"MERCADO HERMELINDA",distrito:"TRUJILLO",zona:"TRUJILLO",departamento:"LA LIBERTAD",tipo:"MAYORISTA"},
+  {n:30,mercado:"MERCADO PORTALES EL PORVENIR",distrito:"TRUJILLO",zona:"TRUJILLO",departamento:"LA LIBERTAD",tipo:"MINORISTA"},
+  {n:31,mercado:"MERCADO MODELO LA ESPERANZA",distrito:"TRUJILLO",zona:"TRUJILLO",departamento:"LA LIBERTAD",tipo:"MINORISTA"},
+  {n:33,mercado:"MERCADO SANTO DOMINGUITO",distrito:"TRUJILLO",zona:"TRUJILLO",departamento:"LA LIBERTAD",tipo:"MINORISTA"},
+  {n:34,mercado:"MERCADO LA VICTORIA",distrito:"TRUJILLO",zona:"TRUJILLO",departamento:"LA LIBERTAD",tipo:"MINORISTA"},
+  {n:35,mercado:"MERCADO YURTEQUE",distrito:"CHICLAYO",zona:"CHICLAYO",departamento:"LAMBAYEQUE",tipo:"MINORISTA"},
+  {n:36,mercado:"MERCADO INCA",distrito:"CHICLAYO",zona:"CHICLAYO",departamento:"LAMBAYEQUE",tipo:"MINORISTA"},
+  {n:37,mercado:"MERCADO 9 DE OCTUBRE",distrito:"CHICLAYO",zona:"CHICLAYO",departamento:"LAMBAYEQUE",tipo:"MINORISTA"},
+  {n:38,mercado:"MERCADO 21 DE ABRIL",distrito:"CHIMBOTE",zona:"CHIMBOTE",departamento:"ANCASH",tipo:"MINORISTA"},
+  {n:39,mercado:"MERCADO BELLAMAR",distrito:"CHIMBOTE",zona:"CHIMBOTE",departamento:"ANCASH",tipo:"MINORISTA"},
+  {n:40,mercado:"MERCADO EL CARMEN",distrito:"CHIMBOTE",zona:"CHIMBOTE",departamento:"ANCASH",tipo:"MINORISTA"},
+  {n:41,mercado:"MERCADO MAYORISTA GRAU",distrito:"TACNA",zona:"TACNA",departamento:"TACNA",tipo:"MINORISTA"},
+  {n:42,mercado:"MERCADO BOLOGNESI",distrito:"TACNA",zona:"TACNA",departamento:"TACNA",tipo:"MINORISTA"},
+  {n:43,mercado:"MERCADO HEROES DEL CENEPA",distrito:"TACNA",zona:"TACNA",departamento:"TACNA",tipo:"MINORISTA"},
+  {n:44,mercado:"MERCADO",distrito:"TARMA",zona:"TARMA",departamento:"JUNIN",tipo:"MINORISTA"},
+  {n:45,mercado:"MERCADO",distrito:"TARMA",zona:"TARMA",departamento:"JUNIN",tipo:"MINORISTA"},
+];
+
+const extras = {};
+let selected = null;
+
+function unique(key) {
+  return ["TODOS", ...new Set(data.map(d => d[key]))];
+}
+
+function poblarSelect(id, vals) {
+  const el = document.getElementById(id);
+  el.innerHTML = vals.map(v => `<option>${v}</option>`).join("");
+}
+
+function init() {
+  poblarSelect("filDep", unique("departamento"));
+  poblarSelect("filTipo", unique("tipo"));
+  actualizarDistritos();
+  document.getElementById("filDep").addEventListener("change", () => { actualizarDistritos(); renderTabla(); });
+  document.getElementById("filDis").addEventListener("change", renderTabla);
+  document.getElementById("filTipo").addEventListener("change", renderTabla);
+  document.getElementById("search").addEventListener("input", renderTabla);
+  renderTabla();
+}
+
+function actualizarDistritos() {
+  const dep = document.getElementById("filDep").value;
+  const base = dep === "TODOS" ? data : data.filter(d => d.departamento === dep);
+  poblarSelect("filDis", ["TODOS", ...new Set(base.map(d => d.distrito))]);
+}
+
+function filtrados() {
+  const q = document.getElementById("search").value.toLowerCase();
+  const dep = document.getElementById("filDep").value;
+  const dis = document.getElementById("filDis").value;
+  const tipo = document.getElementById("filTipo").value;
+  return data.filter(d =>
+    (!q || d.mercado.toLowerCase().includes(q) || d.distrito.toLowerCase().includes(q)) &&
+    (dep === "TODOS" || d.departamento === dep) &&
+    (dis === "TODOS" || d.distrito === dis) &&
+    (tipo === "TODOS" || d.tipo === tipo)
+  );
+}
+
+function renderTabla() {
+  const rows = filtrados();
+  document.getElementById("count").textContent = rows.length;
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = rows.length === 0
+    ? `<tr><td colspan="7" class="text-center py-10 text-gray-400">No se encontraron resultados</td></tr>`
+    : rows.map((d, i) => `
+      <tr class="${i%2===0?'bg-white':'bg-gray-50'} hover:bg-blue-50 cursor-pointer transition" onclick="openModal(${d.n})">
+        <td class="px-3 py-2 text-gray-400">${d.n}</td>
+        <td class="px-3 py-2 font-medium text-gray-800">${d.mercado}</td>
+        <td class="px-3 py-2 text-gray-600">${d.distrito}</td>
+        <td class="px-3 py-2 text-gray-500 hidden md:table-cell text-xs">${d.zona}</td>
+        <td class="px-3 py-2 text-gray-600">${d.departamento}</td>
+        <td class="px-3 py-2">
+          <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${d.tipo==='MAYORISTA'?'bg-orange-100 text-orange-700':'bg-green-100 text-green-700'}">${d.tipo}</span>
+        </td>
+        <td class="px-3 py-2 text-center">${extras[d.n] ? '✅' : '<span class="text-gray-300">○</span>'}</td>
+      </tr>`).join("");
+}
+
+function resetFiltros() {
+  document.getElementById("search").value = "";
+  document.getElementById("filDep").value = "TODOS";
+  document.getElementById("filTipo").value = "TODOS";
+  actualizarDistritos();
+  renderTabla();
+}
+
+function openModal(n) {
+  selected = data.find(d => d.n === n);
+  document.getElementById("modal-sub").textContent = `N° ${selected.n} · ${selected.tipo}`;
+  document.getElementById("modal-title").textContent = selected.mercado;
+  document.getElementById("modal-loc").textContent = `📍 ${selected.distrito} — ${selected.departamento}`;
+  const ex = extras[n] || {};
+  document.getElementById("m-campana").value = ex.campana || "";
+  document.getElementById("m-vallas").value = ex.vallas || "";
+  document.getElementById("m-estado").value = ex.estado || "";
+  document.getElementById("modal-msg").classList.add("hidden");
+  document.getElementById("modal").classList.remove("hidden");
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.add("hidden");
+  selected = null;
+}
+
+function guardar() {
+  const btn = document.getElementById("btn-guardar");
+  const msg = document.getElementById("modal-msg");
+  btn.textContent = "⏳ Guardando...";
+  btn.disabled = true;
+
+  const payload = {
+    ...selected,
+    campana: document.getElementById("m-campana").value,
+    vallas: document.getElementById("m-vallas").value,
+    estado: document.getElementById("m-estado").value,
+  };
+
+  const url = `${SCRIPT_URL}?data=${encodeURIComponent(JSON.stringify(payload))}`;
+
+  fetch(url)
+    .then(r => r.json())
+    .then(res => {
+      extras[selected.n] = { campana: payload.campana, vallas: payload.vallas, estado: payload.estado };
+      document.getElementById("contador").textContent = `${Object.keys(extras).length} mercados registrados`;
+      renderTabla();
+      msg.textContent = "✅ Guardado correctamente en Google Sheets";
+      msg.className = "text-center text-xs pb-4 font-semibold text-green-600";
+      msg.classList.remove("hidden");
+    })
+    .catch(() => {
+      msg.textContent = "❌ Error al guardar. Verifica tu conexión.";
+      msg.className = "text-center text-xs pb-4 font-semibold text-red-500";
+      msg.classList.remove("hidden");
+    })
+    .finally(() => {
+      btn.textContent = "💾 Guardar";
+      btn.disabled = false;
+    });
+}
+
+init();
+</script>
+</body>
+</html>
