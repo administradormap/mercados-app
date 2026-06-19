@@ -377,7 +377,7 @@ async function guardar() {
   try {
     // 1. Guardar datos de texto
     const url = `${SCRIPT_URL}?data=${encodeURIComponent(JSON.stringify(payload))}`;
-    await fetch(url);
+    await fetch(url, { method: "GET", mode: "no-cors" });
 
     // 2. Subir fotos por separado
     const fotos = [
