@@ -181,7 +181,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJoJ6q2osWZZnu25v_8nYP5FBeiGMexU_3fGnND_d_Efk0n3t5Uk3-JrXsM_6eWFzh/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMd-e9cU_9WhnjrTn1n3cbPX9bKV6NVH57mZjF9R5IwbNdOpiEuPtHpdBIDFzUrA45/exec";
 
 const data = [
   {n:1,mercado:"MERCADO TRES REGIONES",distrito:"CARABAYLLO",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MAYORISTA"},
@@ -390,14 +390,14 @@ async function guardar() {
     for (const f of fotos) {
       const b64 = await toBase64(f.id);
       if (!b64) continue;
-      const form = new FormData();
-      form.append("tipo", "foto");
-      form.append("foto", b64);
-      form.append("campo", f.campo);
-      form.append("nombre", `${selected.mercado}_${f.campo}`);
-      form.append("mercado", selected.mercado);
-      form.append("n", selected.n);
-      await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: form });
+      // Enviar en chunks de 50000 caracteres
+      const chunkSize = 50000;
+      const totalChunks = Math.ceil(b64.length / chunkSize);
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = b64.slice(i * chunkSize, (i + 1) * chunkSize);
+        const fotoUrl = `${SCRIPT_URL}?foto=${encodeURIComponent(chunk)}&campo=${f.campo}&mercado=${encodeURIComponent(selected.mercado)}&n=${selected.n}&nombre=${encodeURIComponent(selected.mercado + '_' + f.campo)}&chunk=${i}&totalChunks=${totalChunks}`;
+        await fetch(fotoUrl, { method: "GET", mode: "no-cors" });
+      }
     }
 
     extras[selected.n] = payload;
