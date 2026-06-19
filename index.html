@@ -181,7 +181,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwY9Nm4MdNlIMLWo84dXPnZNaxE8hLXbkQ2bdFtjFX5as2vFS31y6DSBPliyexUFn5N/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJoJ6q2osWZZnu25v_8nYP5FBeiGMexU_3fGnND_d_Efk0n3t5Uk3-JrXsM_6eWFzh/exec";
 
 const data = [
   {n:1,mercado:"MERCADO TRES REGIONES",distrito:"CARABAYLLO",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MAYORISTA"},
@@ -359,53 +359,61 @@ async function guardar() {
   btn.textContent = "⏳ Guardando...";
   btn.disabled = true;
 
-  const [fotoPasadizo, fotoPortico, fotoPerimetral, fotoRecibo] = await Promise.all([
-    toBase64("foto-pasadizo"),
-    toBase64("foto-portico"),
-    toBase64("foto-perimetral"),
-    toBase64("foto-recibo"),
-  ]);
-
   const payload = {
     ...selected,
     campana: document.getElementById("m-campana").value,
     vigencia: document.getElementById("m-vigencia").value,
     pasadizo: document.getElementById("chk-pasadizo").checked,
     cantPasadizo: document.getElementById("cant-pasadizo").value,
-    fotoPasadizo,
     portico: document.getElementById("chk-portico").checked,
     cantPortico: document.getElementById("cant-portico").value,
-    fotoPortico,
     perimetral: document.getElementById("chk-perimetral").checked,
     cantPerimetral: document.getElementById("cant-perimetral").value,
-    fotoPerimetral,
     desde: document.getElementById("m-desde").value,
     hasta: document.getElementById("m-hasta").value,
     monto: document.getElementById("m-monto").value,
-    fotoRecibo,
   };
 
-  const url = `${SCRIPT_URL}?data=${encodeURIComponent(JSON.stringify(payload))}`;
+  try {
+    // 1. Guardar datos de texto
+    const url = `${SCRIPT_URL}?data=${encodeURIComponent(JSON.stringify(payload))}`;
+    await fetch(url);
 
-  fetch(url)
-    .then(r => r.json())
-    .then(() => {
-      extras[selected.n] = payload;
-      document.getElementById("contador").textContent = `${Object.keys(extras).length} mercados registrados`;
-      renderTabla();
-      msg.textContent = "✅ Guardado correctamente en Google Sheets";
-      msg.className = "text-center text-xs pb-4 font-semibold text-green-600";
-      msg.classList.remove("hidden");
-    })
-    .catch(() => {
-      msg.textContent = "❌ Error al guardar. Verifica tu conexión.";
-      msg.className = "text-center text-xs pb-4 font-semibold text-red-500";
-      msg.classList.remove("hidden");
-    })
-    .finally(() => {
-      btn.textContent = "💾 Guardar";
-      btn.disabled = false;
-    });
+    // 2. Subir fotos por separado
+    const fotos = [
+      { id: "foto-pasadizo",  campo: "fotoPasadizo" },
+      { id: "foto-portico",   campo: "fotoPortico" },
+      { id: "foto-perimetral",campo: "fotoPerimetral" },
+      { id: "foto-recibo",    campo: "fotoRecibo" },
+    ];
+
+    for (const f of fotos) {
+      const b64 = await toBase64(f.id);
+      if (!b64) continue;
+      const form = new FormData();
+      form.append("tipo", "foto");
+      form.append("foto", b64);
+      form.append("campo", f.campo);
+      form.append("nombre", `${selected.mercado}_${f.campo}`);
+      form.append("mercado", selected.mercado);
+      form.append("n", selected.n);
+      await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: form });
+    }
+
+    extras[selected.n] = payload;
+    document.getElementById("contador").textContent = `${Object.keys(extras).length} mercados registrados`;
+    renderTabla();
+    msg.textContent = "✅ Guardado correctamente en Google Sheets";
+    msg.className = "text-center text-xs pb-4 font-semibold text-green-600";
+    msg.classList.remove("hidden");
+  } catch {
+    msg.textContent = "❌ Error al guardar. Verifica tu conexión.";
+    msg.className = "text-center text-xs pb-4 font-semibold text-red-500";
+    msg.classList.remove("hidden");
+  } finally {
+    btn.textContent = "💾 Guardar";
+    btn.disabled = false;
+  }
 }
 
 init();
