@@ -16,7 +16,10 @@
       <h1 class="text-xl font-bold">🏪 Buscador de Mercados</h1>
       <p class="text-blue-200 text-sm mt-1">Haz clic en un mercado para registrar su información</p>
     </div>
-    <span class="text-blue-200 text-sm" id="contador">0 mercados registrados</span>
+    <div class="flex items-center gap-3">
+      <span class="text-blue-200 text-sm" id="contador">0 mercados registrados</span>
+      <button onclick="abrirModalNuevo()" class="bg-white text-blue-700 text-sm font-bold px-3 py-1.5 rounded-lg hover:bg-blue-50 transition">+ Agregar</button>
+    </div>
   </div>
 
   <!-- Filtros -->
@@ -45,8 +48,11 @@
     <button onclick="resetFiltros()" class="text-xs text-blue-600 hover:underline">Limpiar filtros</button>
   </div>
 
+  <!-- Loading -->
+  <div id="loading" class="bg-white rounded-xl shadow p-10 text-center text-gray-400 text-sm">⏳ Cargando mercados...</div>
+
   <!-- Tabla -->
-  <div class="bg-white rounded-xl shadow overflow-hidden">
+  <div class="bg-white rounded-xl shadow overflow-hidden hidden" id="tabla-wrap">
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
@@ -66,11 +72,9 @@
   </div>
 </div>
 
-<!-- Modal -->
+<!-- Modal Registro -->
 <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-screen overflow-y-auto">
-
-    <!-- Modal Header -->
     <div class="bg-blue-700 text-white rounded-t-2xl p-4 sticky top-0 z-10">
       <div class="flex justify-between items-start">
         <div>
@@ -81,16 +85,15 @@
         <button onclick="closeModal()" class="text-white text-xl font-bold hover:text-blue-200 ml-2">✕</button>
       </div>
     </div>
-
     <div class="p-5 space-y-5">
 
-      <!-- 1. Campaña Activa -->
+      <!-- Campaña Activa -->
       <div class="border border-gray-200 rounded-xl p-4">
         <h3 class="text-sm font-bold text-blue-700 mb-3">📢 Campaña Activa</h3>
         <div class="flex gap-2">
           <div class="flex-1">
             <label class="text-xs text-gray-500 mb-1 block">Cliente / Campaña</label>
-            <input id="m-campana" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Ej: Coca-Cola, Mibanco..."/>
+            <input id="m-campana" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Ej: Coca-Cola..."/>
           </div>
           <div class="w-36">
             <label class="text-xs text-gray-500 mb-1 block">Vigencia</label>
@@ -99,12 +102,10 @@
         </div>
       </div>
 
-      <!-- 2. Elemento Publicitario -->
+      <!-- Elemento Publicitario -->
       <div class="border border-gray-200 rounded-xl p-4">
         <h3 class="text-sm font-bold text-blue-700 mb-3">🪧 Elemento Publicitario</h3>
         <div class="space-y-3">
-
-          <!-- Valla en Pasadizo -->
           <div class="flex items-center gap-2 flex-wrap">
             <input type="checkbox" id="chk-pasadizo" class="w-4 h-4 accent-blue-700"/>
             <label for="chk-pasadizo" class="text-sm text-gray-700 w-36">Valla en Pasadizo</label>
@@ -115,8 +116,6 @@
             </label>
             <img id="prev-pasadizo" class="hidden w-10 h-10 object-cover rounded-lg border"/>
           </div>
-
-          <!-- Pórtico -->
           <div class="flex items-center gap-2 flex-wrap">
             <input type="checkbox" id="chk-portico" class="w-4 h-4 accent-blue-700"/>
             <label for="chk-portico" class="text-sm text-gray-700 w-36">Pórtico</label>
@@ -127,8 +126,6 @@
             </label>
             <img id="prev-portico" class="hidden w-10 h-10 object-cover rounded-lg border"/>
           </div>
-
-          <!-- Perimetral -->
           <div class="flex items-center gap-2 flex-wrap">
             <input type="checkbox" id="chk-perimetral" class="w-4 h-4 accent-blue-700"/>
             <label for="chk-perimetral" class="text-sm text-gray-700 w-36">Perimetral</label>
@@ -139,11 +136,10 @@
             </label>
             <img id="prev-perimetral" class="hidden w-10 h-10 object-cover rounded-lg border"/>
           </div>
-
         </div>
       </div>
 
-      <!-- 3. Pago Mercado -->
+      <!-- Pago Mercado -->
       <div class="border border-gray-200 rounded-xl p-4">
         <h3 class="text-sm font-bold text-blue-700 mb-3">💳 Pago Mercado</h3>
         <div class="grid grid-cols-3 gap-2 mb-3">
@@ -168,10 +164,8 @@
           <img id="prev-recibo" class="hidden w-10 h-10 object-cover rounded-lg border"/>
         </div>
       </div>
-
     </div>
 
-    <!-- Footer -->
     <div class="px-5 pb-3 flex gap-3">
       <button onclick="guardar()" id="btn-guardar" class="flex-1 bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 rounded-lg transition text-sm">💾 Guardar</button>
       <button onclick="closeModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 rounded-lg transition text-sm">Cerrar</button>
@@ -180,67 +174,69 @@
   </div>
 </div>
 
+<!-- Modal Nuevo Mercado -->
+<div id="modal-nuevo" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+    <div class="bg-blue-700 text-white rounded-t-2xl p-4 flex justify-between items-center">
+      <h2 class="font-bold text-base">➕ Agregar Nuevo Mercado</h2>
+      <button onclick="cerrarModalNuevo()" class="text-white text-xl font-bold hover:text-blue-200">✕</button>
+    </div>
+    <div class="p-5 space-y-3">
+      <div>
+        <label class="text-xs font-semibold text-gray-600 mb-1 block">Nombre del Mercado</label>
+        <input id="new-mercado" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Ej: MERCADO CENTRAL"/>
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-gray-600 mb-1 block">Distrito</label>
+        <input id="new-distrito" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Ej: MIRAFLORES"/>
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-gray-600 mb-1 block">Zona</label>
+        <input id="new-zona" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Ej: ZONA LIMA SUR"/>
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-gray-600 mb-1 block">Departamento</label>
+        <input id="new-departamento" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Ej: LIMA"/>
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-gray-600 mb-1 block">Tipo</label>
+        <select id="new-tipo" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <option value="MINORISTA">MINORISTA</option>
+          <option value="MAYORISTA">MAYORISTA</option>
+        </select>
+      </div>
+    </div>
+    <div class="px-5 pb-3 flex gap-3">
+      <button onclick="guardarNuevoMercado()" id="btn-nuevo" class="flex-1 bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 rounded-lg transition text-sm">💾 Guardar</button>
+      <button onclick="cerrarModalNuevo()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 rounded-lg transition text-sm">Cancelar</button>
+    </div>
+    <p id="nuevo-msg" class="text-center text-xs pb-4 font-semibold hidden"></p>
+  </div>
+</div>
+
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMd-e9cU_9WhnjrTn1n3cbPX9bKV6NVH57mZjF9R5IwbNdOpiEuPtHpdBIDFzUrA45/exec";
 
-const data = [
-  {n:1,mercado:"MERCADO TRES REGIONES",distrito:"CARABAYLLO",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MAYORISTA"},
-  {n:2,mercado:"MERCADO LOS INCAS",distrito:"INDEPENDENCIA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:3,mercado:"MERCADO ERMITAÑO",distrito:"INDEPENDENCIA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:4,mercado:"MERCADO MIGUEL GRAU",distrito:"INDEPENDENCIA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:5,mercado:"MERCADO TAHUANTINSUYO",distrito:"INDEPENDENCIA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:6,mercado:"MERCADO CENTRAL VILLA DEL NORTE",distrito:"LOS OLIVOS",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:7,mercado:"MERCADO MERPROLIMA",distrito:"LOS OLIVOS",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:8,mercado:"MERCADO CONZAC",distrito:"LOS OLIVOS",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MAYORISTA"},
-  {n:9,mercado:"MERCADO UNION LOMAS",distrito:"PUENTE PIEDRA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:10,mercado:"MERCADO SEÑOR DE LOS MILAGROS",distrito:"SANTA ANITA",zona:"ZONA LIMA ESTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:11,mercado:"MERCADO SAN ANTONIO",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:12,mercado:"MERCADO CIPRESES",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:13,mercado:"MERCADO ZARUMILLA",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:14,mercado:"MERCADO LOS CHASQUIS",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:15,mercado:"MERCADO AMAKELLA",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:16,mercado:"MERCADO 3 DE ENERO",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:17,mercado:"MERCADO NISPEROS",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:18,mercado:"MERCADO LA ESTRELLA CAQUETA",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MAYORISTA"},
-  {n:19,mercado:"MERCADO GALERÍAS CAQUETA",distrito:"SMP",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:20,mercado:"MERCADO VIRGEN DE LAS MERCEDES",distrito:"VENTANILLA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:21,mercado:"MERCADO VIRGEN DE LA PUERTA",distrito:"VENTANILLA",zona:"ZONA LIMA NORTE (AL)",departamento:"LIMA",tipo:"MINORISTA"},
-  {n:22,mercado:"MERCADO MERSUR",distrito:"AREQUIPA",zona:"AREQUIPA",departamento:"AREQUIPA",tipo:"MINORISTA"},
-  {n:23,mercado:"MERCADO RIO SECO",distrito:"AREQUIPA",zona:"AREQUIPA",departamento:"AREQUIPA",tipo:"MAYORISTA"},
-  {n:24,mercado:"MERCADO LOS INCAS",distrito:"AREQUIPA",zona:"AREQUIPA",departamento:"AREQUIPA",tipo:"MAYORISTA"},
-  {n:25,mercado:"MERCADO VIRGEN DEL CHAPI",distrito:"AREQUIPA",zona:"AREQUIPA",departamento:"AREQUIPA",tipo:"MINORISTA"},
-  {n:26,mercado:"MERCADO NUEVO AMANECER",distrito:"AREQUIPA",zona:"AREQUIPA",departamento:"AREQUIPA",tipo:"MINORISTA"},
-  {n:27,mercado:"MERCADO HERMELINDA",distrito:"TRUJILLO",zona:"TRUJILLO",departamento:"LA LIBERTAD",tipo:"MAYORISTA"},
-  {n:28,mercado:"MERCADO PORTALES EL PORVENIR",distrito:"TRUJILLO",zona:"TRUJILLO",departamento:"LA LIBERTAD",tipo:"MINORISTA"},
-  {n:29,mercado:"MERCADO MODELO LA ESPERANZA",distrito:"TRUJILLO",zona:"TRUJILLO",departamento:"LA LIBERTAD",tipo:"MINORISTA"},
-  {n:30,mercado:"MERCADO SANTO DOMINGUITO",distrito:"TRUJILLO",zona:"TRUJILLO",departamento:"LA LIBERTAD",tipo:"MINORISTA"},
-  {n:31,mercado:"MERCADO LA VICTORIA",distrito:"TRUJILLO",zona:"TRUJILLO",departamento:"LA LIBERTAD",tipo:"MINORISTA"},
-  {n:32,mercado:"MERCADO YURTEQUE",distrito:"CHICLAYO",zona:"CHICLAYO",departamento:"LAMBAYEQUE",tipo:"MINORISTA"},
-  {n:33,mercado:"MERCADO INCA",distrito:"CHICLAYO",zona:"CHICLAYO",departamento:"LAMBAYEQUE",tipo:"MINORISTA"},
-  {n:34,mercado:"MERCADO MOSHOQUEQUE",distrito:"CHICLAYO",zona:"CHICLAYO",departamento:"LAMBAYEQUE",tipo:"MINORISTA"},
-  {n:35,mercado:"MERCADO 21 DE ABRIL",distrito:"CHIMBOTE",zona:"CHIMBOTE",departamento:"ANCASH",tipo:"MINORISTA"},
-  {n:36,mercado:"MERCADO BELLAMAR",distrito:"CHIMBOTE",zona:"CHIMBOTE",departamento:"ANCASH",tipo:"MINORISTA"},
-  {n:37,mercado:"MERCADO EL CARMEN",distrito:"CHIMBOTE",zona:"CHIMBOTE",departamento:"ANCASH",tipo:"MINORISTA"},
-  {n:38,mercado:"MERCADO MAYORISTA GRAU",distrito:"TACNA",zona:"TACNA",departamento:"TACNA",tipo:"MINORISTA"},
-  {n:39,mercado:"MERCADO BOLOGNESI",distrito:"TACNA",zona:"TACNA",departamento:"TACNA",tipo:"MINORISTA"},
-  {n:40,mercado:"MERCADO HEROES DEL CENEPA",distrito:"TACNA",zona:"TACNA",departamento:"TACNA",tipo:"MINORISTA"},
-  {n:41,mercado:"MERCADO MODELO TACNA",distrito:"TARMA",zona:"TARMA",departamento:"JUNIN",tipo:"MINORISTA"},
-  {n:42,mercado:"MERCADO 2 DE MAYO",distrito:"TARMA",zona:"TARMA",departamento:"JUNIN",tipo:"MINORISTA"},
-];
-
+let data = [];
 const extras = {};
 let selected = null;
 
-function unique(key) {
-  return ["TODOS", ...new Set(data.map(d => d[key]))];
+// ── Carga inicial ──────────────────────────────────────────
+async function cargarMercados() {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?accion=listar`);
+    const json = await res.json();
+    data = json.mercados;
+    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("tabla-wrap").classList.remove("hidden");
+    poblarFiltros();
+    renderTabla();
+  } catch {
+    document.getElementById("loading").textContent = "❌ Error al cargar los mercados. Recarga la página.";
+  }
 }
 
-function poblarSelect(id, vals) {
-  const el = document.getElementById(id);
-  el.innerHTML = vals.map(v => `<option>${v}</option>`).join("");
-}
-
-function init() {
+function poblarFiltros() {
   poblarSelect("filDep", unique("departamento"));
   poblarSelect("filTipo", unique("tipo"));
   actualizarDistritos();
@@ -248,7 +244,14 @@ function init() {
   document.getElementById("filDis").addEventListener("change", renderTabla);
   document.getElementById("filTipo").addEventListener("change", renderTabla);
   document.getElementById("search").addEventListener("input", renderTabla);
-  renderTabla();
+}
+
+function unique(key) {
+  return ["TODOS", ...new Set(data.map(d => d[key]))];
+}
+
+function poblarSelect(id, vals) {
+  document.getElementById(id).innerHTML = vals.map(v => `<option>${v}</option>`).join("");
 }
 
 function actualizarDistritos() {
@@ -273,8 +276,7 @@ function filtrados() {
 function renderTabla() {
   const rows = filtrados();
   document.getElementById("count").textContent = rows.length;
-  const tbody = document.getElementById("tbody");
-  tbody.innerHTML = rows.length === 0
+  document.getElementById("tbody").innerHTML = rows.length === 0
     ? `<tr><td colspan="7" class="text-center py-10 text-gray-400">No se encontraron resultados</td></tr>`
     : rows.map((d, i) => `
       <tr class="${i%2===0?'bg-white':'bg-gray-50'} hover:bg-blue-50 cursor-pointer transition" onclick="openModal(${d.n})">
@@ -283,10 +285,8 @@ function renderTabla() {
         <td class="px-3 py-2 text-gray-600">${d.distrito}</td>
         <td class="px-3 py-2 text-gray-500 hidden md:table-cell text-xs">${d.zona}</td>
         <td class="px-3 py-2 text-gray-600">${d.departamento}</td>
-        <td class="px-3 py-2">
-          <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${d.tipo==='MAYORISTA'?'bg-orange-100 text-orange-700':'bg-green-100 text-green-700'}">${d.tipo}</span>
-        </td>
-        <td class="px-3 py-2 text-center">${extras[d.n] ? '✅' : '<span class="text-gray-300">○</span>'}</td>
+        <td class="px-3 py-2"><span class="px-2 py-0.5 rounded-full text-xs font-semibold ${d.tipo==='MAYORISTA'?'bg-orange-100 text-orange-700':'bg-green-100 text-green-700'}">${d.tipo}</span></td>
+        <td class="px-3 py-2 text-center">${extras[d.n]?'✅':'<span class="text-gray-300">○</span>'}</td>
       </tr>`).join("");
 }
 
@@ -298,6 +298,7 @@ function resetFiltros() {
   renderTabla();
 }
 
+// ── Modal registro ─────────────────────────────────────────
 function openModal(n) {
   selected = data.find(d => d.n === n);
   document.getElementById("modal-sub").textContent = `N° ${selected.n} · ${selected.tipo}`;
@@ -375,31 +376,8 @@ async function guardar() {
   };
 
   try {
-    // 1. Guardar datos de texto
     const url = `${SCRIPT_URL}?data=${encodeURIComponent(JSON.stringify(payload))}`;
     await fetch(url, { method: "GET", mode: "no-cors" });
-
-    // 2. Subir fotos por separado
-    const fotos = [
-      { id: "foto-pasadizo",  campo: "fotoPasadizo" },
-      { id: "foto-portico",   campo: "fotoPortico" },
-      { id: "foto-perimetral",campo: "fotoPerimetral" },
-      { id: "foto-recibo",    campo: "fotoRecibo" },
-    ];
-
-    for (const f of fotos) {
-      const b64 = await toBase64(f.id);
-      if (!b64) continue;
-      // Enviar en chunks de 50000 caracteres
-      const chunkSize = 50000;
-      const totalChunks = Math.ceil(b64.length / chunkSize);
-      for (let i = 0; i < totalChunks; i++) {
-        const chunk = b64.slice(i * chunkSize, (i + 1) * chunkSize);
-        const fotoUrl = `${SCRIPT_URL}?foto=${encodeURIComponent(chunk)}&campo=${f.campo}&mercado=${encodeURIComponent(selected.mercado)}&n=${selected.n}&nombre=${encodeURIComponent(selected.mercado + '_' + f.campo)}&chunk=${i}&totalChunks=${totalChunks}`;
-        await fetch(fotoUrl, { method: "GET", mode: "no-cors" });
-      }
-    }
-
     extras[selected.n] = payload;
     document.getElementById("contador").textContent = `${Object.keys(extras).length} mercados registrados`;
     renderTabla();
@@ -416,7 +394,61 @@ async function guardar() {
   }
 }
 
-init();
+// ── Modal nuevo mercado ────────────────────────────────────
+function abrirModalNuevo() {
+  ["new-mercado","new-distrito","new-zona","new-departamento"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("new-tipo").value = "MINORISTA";
+  document.getElementById("nuevo-msg").classList.add("hidden");
+  document.getElementById("modal-nuevo").classList.remove("hidden");
+}
+
+function cerrarModalNuevo() {
+  document.getElementById("modal-nuevo").classList.add("hidden");
+}
+
+async function guardarNuevoMercado() {
+  const btn = document.getElementById("btn-nuevo");
+  const msg = document.getElementById("nuevo-msg");
+  const mercado = document.getElementById("new-mercado").value.trim().toUpperCase();
+  const distrito = document.getElementById("new-distrito").value.trim().toUpperCase();
+  const zona = document.getElementById("new-zona").value.trim().toUpperCase();
+  const departamento = document.getElementById("new-departamento").value.trim().toUpperCase();
+  const tipo = document.getElementById("new-tipo").value;
+
+  if (!mercado || !distrito || !departamento) {
+    msg.textContent = "⚠️ Completa al menos Nombre, Distrito y Departamento.";
+    msg.className = "text-center text-xs pb-4 font-semibold text-orange-500";
+    msg.classList.remove("hidden");
+    return;
+  }
+
+  btn.textContent = "⏳ Guardando...";
+  btn.disabled = true;
+
+  try {
+    const url = `${SCRIPT_URL}?accion=agregar&mercado=${encodeURIComponent(mercado)}&distrito=${encodeURIComponent(distrito)}&zona=${encodeURIComponent(zona)}&departamento=${encodeURIComponent(departamento)}&tipo=${tipo}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.success) {
+      data.push({ n: json.n, mercado, distrito, zona, departamento, tipo });
+      poblarFiltros();
+      renderTabla();
+      msg.textContent = "✅ Mercado agregado correctamente";
+      msg.className = "text-center text-xs pb-4 font-semibold text-green-600";
+      msg.classList.remove("hidden");
+      setTimeout(() => cerrarModalNuevo(), 1500);
+    }
+  } catch {
+    msg.textContent = "❌ Error al guardar. Verifica tu conexión.";
+    msg.className = "text-center text-xs pb-4 font-semibold text-red-500";
+    msg.classList.remove("hidden");
+  } finally {
+    btn.textContent = "💾 Guardar";
+    btn.disabled = false;
+  }
+}
+
+cargarMercados();
 </script>
 </body>
 </html>
